@@ -2,7 +2,7 @@ using Random,StatsBase,Distributions,Polynomials
 Random.seed!(150000)
 
 #LSM原始算法，针对美式PUT
-function LSM_PRIMAL(S0,K,T,r,σ,I,M)
+function LSM_PRIMAL(S0::Float64,K::Float64,T::Float64,r::Float64,σ::Float64,I::Int,M::Int)
     """
 
     # Arguments
@@ -31,7 +31,7 @@ function LSM_PRIMAL(S0,K,T,r,σ,I,M)
 
     V=copy(h[end,:])
 
-    for t=M:-1:1
+    @simd for t=M:-1:1
         rg=polyfit(S[t,:],V*df,5)
         C=map(x->polyval(rg,x),S[t,:])
         res=h[t,:].>C
@@ -50,12 +50,12 @@ end
 
 
 #LSM对偶算法
-function LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
+function LSM_DUAL(S0::Float64,K::Float64,T::Float64,r::Float64,σ::Float64,J::Int,I1::Int,I2::Int,M::Int,reg::Int)
     """
 
     # Arguments
-    - `S0`: 初始标的值.
-    - `K`: 行权值
+    - `S0`: 初始::Int标的值::Int.
+    ::Int- ::Int`K`: 行权值
     - `T`: 到期时间，年为单位
     - `r`: 无风险利率
     - `σ`: 波动率
@@ -78,7 +78,7 @@ function LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
     rg0=[]
     a=Poly(0)
     push!(rg0,a)
-    for t=M:-1:2
+    @simd for t=M:-1:2
         rgr=polyfit(S1[t,:],V1[t+1,:]*df,5)
         push!(rg0,rgr)
     end
@@ -93,7 +93,7 @@ function LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
     V=map(x->max(K-x,0),S)
 
 
-    for t=2:M+1
+    @simd for t=2:M+1
         for i=1:I2
             tmp=polyval(rg[t],S[t,i])
             Vt=max(h[t,i],tmp)
@@ -103,7 +103,7 @@ function LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
             res=ht.>Ct
             Vtj=zeros(J)
             for k=1:length(res)
-                if res==true
+                if res[k]==true
                     Vtj[k]=ht[k]
                 else
                     Vtj[k]=Ct[k]
@@ -125,7 +125,7 @@ function LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
 end
 
 #产生标的仿真路径-单路径
-function generate_nest_mc(r,σ,dt,st,J)
+function generate_nest_mc(r::Float64,σ::Float64,dt::Float64,st::Float64,J::Int)
 
     p1=(r-0.5*(σ^2))*dt
     p2=rand(Normal(0,1),J)
@@ -137,11 +137,11 @@ function generate_nest_mc(r,σ,dt,st,J)
 end
 
 #产生标的仿真路径-多路径
-function genrate_path(S0,r,σ,dt,M,I)
+function genrate_path(S0::Float64,r::Float64,σ::Float64,dt::Float64,M::Int,I::Int)
     p1=(r-0.5*(σ^2))*dt
     S=zeros(M+1,I)
     S[1,:]=map(x->x=S0,S[1,:])
-    for t=2:M+1
+    @simd for t=2:M+1
         p2=rand(Normal(0,1),I)
         p3=p1 .+σ*√(dt)*p2
         S[t,:]=S[t-1,:].*(p3.|>exp)
@@ -164,3 +164,4 @@ reg=5
 
 
 res=LSM_DUAL(S0,K,T,r,σ,J,I1,I2,M,reg)
+println(res)

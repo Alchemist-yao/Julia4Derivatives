@@ -4,7 +4,7 @@ using BenchmarkTools,Random
 
 
 #FFT算放中提及到的特征函数变化
-function M76_CharacFun(u,x0,T,r,σ,λ,μ,δ)
+function M76_CharacFun(u::Float64,x0::Float64,T::Float64,r::Float64,σ::Float64,λ::Float64,μ::Float64,δ::Float64)
     ω=x0/T+r-0.5*(σ^2)-λ*(exp(μ+0.5*(δ^2))-1)
     tmp1=λ*(map(x->exp(x)-1,1im*u*μ .-0.5*(u.^2)*δ^2))
     value=map(x->exp(x*T),(1im*u*ω .-0.5*(u .^2)*σ^2 .+tmp1))
@@ -13,7 +13,7 @@ function M76_CharacFun(u,x0,T,r,σ,λ,μ,δ)
 end
 
 #M76模型下的FFT方法计算欧式看涨期权
-function M76_value_call_FFT(S0,K,T,r,σ,λ,μ,δ)
+function M76_value_call_FFT(S0::Float64,K::Float64,T::Float64,r::Float64,σ::Float64,λ::Float64,μ::Float64,δ::Float64)
 
     """
 
@@ -73,7 +73,8 @@ end
 
 
 #M76模型下的蒙特卡洛方法计算欧式看涨期权
-function M76_value_call_MCS(S0,K,T,r,σ,λ,μ,δ,M,I,dist)
+function M76_value_call_MCS(S0::Float64,K::Float64,T::Float64,r::Float64,σ::Float64,λ::Float64,μ::Float64,δ::Float64,
+    M::Int,I::Int,dist::Int)
 
     """
 
@@ -102,7 +103,7 @@ function M76_value_call_MCS(S0,K,T,r,σ,λ,μ,δ,M,I,dist)
     rand2=rand(Normal(0,1),M+1,I)
     rand3=rand(Poisson(λ*dt),M+1,I)
 
-    for t=2:M+1
+    @simd for t=2:M+1
         if dist==1
             p0=(1+(r-rj)*dt) .+σ*√(dt)*rand1[t,:]
             p1=map(x->exp(μ+δ*x)-1,rand2[t,:]) .*rand3[t,:]

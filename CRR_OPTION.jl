@@ -88,7 +88,7 @@ function crr_value_fast(o::EuropeanOption_crr,N::Int64)
         Z = [max(0, o.St * exp((2 * i - N) * σ * √Δt) - o.K) for i = 0:N]
     end
 
-    for n = N-1:-1:0
+    @simd for n = N-1:-1:0
         for i = 0:n
             if o.type == "put"
                 x = o.K - o.St * exp((2 * i - n) * o.σ * √Δt)
